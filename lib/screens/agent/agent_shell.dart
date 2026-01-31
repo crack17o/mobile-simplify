@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_simplify/models/user.dart';
-import 'package:mobile_simplify/screens/agent/agent_dashboard_screen.dart';
+import 'package:mobile_simplify/screens/agent/agent_clients_screen.dart';
+import 'package:mobile_simplify/screens/agent/agent_caisse_screen.dart';
 import 'package:mobile_simplify/screens/agent/agent_history_screen.dart';
 import 'package:mobile_simplify/theme/app_theme.dart';
 import 'package:mobile_simplify/widgets/user_menu_button.dart';
 
-/// Shell agent : onglets Dashboard (Encaisser), Historique opérations.
+/// Shell agent : onglets Clients, Caisse (Dépôt/Retrait), Historique.
 class AgentShell extends StatefulWidget {
   final AppUser user;
 
@@ -21,7 +22,7 @@ class _AgentShellState extends State<AgentShell> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -85,8 +86,12 @@ class _AgentShellState extends State<AgentShell> with SingleTickerProviderStateM
               ),
               tabs: const [
                 Tab(
+                  icon: Icon(Icons.people_rounded, size: 22),
+                  text: 'Clients',
+                ),
+                Tab(
                   icon: Icon(Icons.point_of_sale_rounded, size: 22),
-                  text: 'Encaisser',
+                  text: 'Caisse',
                 ),
                 Tab(
                   icon: Icon(Icons.history_rounded, size: 22),
@@ -100,7 +105,8 @@ class _AgentShellState extends State<AgentShell> with SingleTickerProviderStateM
       body: TabBarView(
         controller: _tabController,
         children: [
-          AgentDashboardScreen(user: widget.user),
+          AgentClientsScreen(user: widget.user),
+          AgentCaisseScreen(user: widget.user),
           AgentHistoryScreen(user: widget.user),
         ],
       ),

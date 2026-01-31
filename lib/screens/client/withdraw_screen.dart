@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile_simplify/models/user.dart';
 import 'package:mobile_simplify/theme/app_theme.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 
-/// Retrait : formulaire montant + PIN → résultat: code + expiration + montant.
+/// Retrait : client initie → montant + PIN → code + expiration.
+/// Le client peut télécharger le code en image et le présenter à l'agent.
 class WithdrawScreen extends StatefulWidget {
   final AppUser user;
 
@@ -15,7 +19,9 @@ class WithdrawScreen extends StatefulWidget {
 class _WithdrawScreenState extends State<WithdrawScreen> {
   final _amountController = TextEditingController();
   final _pinController = TextEditingController();
+  final _screenshotController = ScreenshotController();
   bool _loading = false;
+  bool _saving = false;
   String? _code;
   String? _expiration;
   String? _amount;
@@ -40,9 +46,38 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
     setState(() {
       _loading = false;
       _amount = _amountController.text.trim();
-      _code = 'ABC${DateTime.now().millisecond}';
-      _expiration = '${DateTime.now().add(const Duration(hours: 8)).hour}h';
+      _code = 'WDR${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}';
+      _expiration = 'Valide 8h';
     });
+  }
+
+  Future<void> _saveAsImage() async {
+    if (_code == null) return;
+    setState(() => _saving = true);
+    try {
+      final image = await _screenshotController.capture(pixelRatio: 2.0);
+      if (image != null && mounted) {
+        await ImageGallerySaver.saveImage(image, name: 'retrait_$_code');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Code sauvegardé dans la galerie'), backgroundColor: AppTheme.success),
+          );
+        }
+      }
+    } on PlatformException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: ${e.message ?? "Permission refusée"}'), backgroundColor: AppTheme.destructive),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: AppTheme.destructive),
+        );
+      }
+    }
+    if (mounted) setState(() => _saving = false);
   }
 
   @override
@@ -60,36 +95,59 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppTheme.cardDark,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                  border: Border.all(color: AppTheme.cardDarkElevated),
-                ),
-                child: Column(
-                  children: [
-                    Text('Code', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white70)),
-                    const SizedBox(height: 8),
-                    Text(
-                      _code!,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontFamily: 'monospace',
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primary,
-                          ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text('Montant: $_amount CDF', style: const TextStyle(color: AppTheme.sidebarForeground)),
-                    Text('Expiration: $_expiration', style: TextStyle(color: Colors.white54)),
-                  ],
+              Screenshot(
+                controller: _screenshotController,
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardDark,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                    border: Border.all(color: AppTheme.primary.withOpacity(0.5), width: 2),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset(
+                        'assets/logo-light.png',
+                        height: 48,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Icon(Icons.account_balance_wallet_rounded, size: 48, color: AppTheme.primary),
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Code retrait', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white70)),
+                      const SizedBox(height: 8),
+                      Text(
+                        _code!,
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontFamily: 'monospace',
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primary,
+                              letterSpacing: 2,
+                            ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Montant: $_amount CDF', style: const TextStyle(color: AppTheme.sidebarForeground, fontWeight: FontWeight.w600)),
+                      Text(_expiration!, style: TextStyle(color: Colors.white54, fontSize: 13)),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
               Text(
-                'Présentez ce code à un agent Simplify pour encaisser.',
+                'Donnez ce code à un agent Simplify. Il le saisira pour valider le retrait et vous remettra l\'argent en main.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white54),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: _saving ? null : _saveAsImage,
+                  icon: _saving ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryForeground)) : const Icon(Icons.download_rounded, size: 22),
+                  label: Text(_saving ? 'Enregistrement...' : 'Télécharger en image'),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: AppTheme.primaryForeground),
+                ),
               ),
             ],
           ),

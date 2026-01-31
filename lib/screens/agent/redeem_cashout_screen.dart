@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mobile_simplify/models/user.dart';
 import 'package:mobile_simplify/theme/app_theme.dart';
 
-/// Encaisser un retrait : input code + montant (ou code seul si backend garde montant).
-/// Confirmation OK / refus (expiré, déjà utilisé). Génération reçu simple (ref + date).
+/// Encaisser un retrait : le client a généré un code, l'agent le saisit.
+/// Confirmation OK / refus (expiré, déjà utilisé). Transaction : retrait du compte client, remise cash.
 class RedeemCashoutScreen extends StatefulWidget {
   final AppUser user;
 
@@ -42,9 +42,9 @@ class _RedeemCashoutScreenState extends State<RedeemCashoutScreen> {
     });
     await Future.delayed(const Duration(seconds: 1));
     if (!mounted) return;
-    // Mock: code ABC123 = OK, autre = refus (expiré)
+    // Mock: code WDR... ou ABC... = OK, autre = refus (expiré ou déjà utilisé)
     final code = _codeController.text.trim().toUpperCase();
-    final ok = code.startsWith('ABC');
+    final ok = code.startsWith('WDR') || code.startsWith('ABC');
     setState(() {
       _loading = false;
       _success = ok;
@@ -156,8 +156,8 @@ class _RedeemCashoutScreenState extends State<RedeemCashoutScreen> {
             controller: _codeController,
             style: const TextStyle(color: AppTheme.sidebarForeground),
             decoration: InputDecoration(
-              labelText: 'Code retrait',
-              hintText: 'Ex: ABC123',
+              labelText: 'Code retrait (saisir le code du client)',
+              hintText: 'Ex: WDR123456',
               labelStyle: TextStyle(color: Colors.white70),
               hintStyle: TextStyle(color: Colors.white38),
               filled: true,
