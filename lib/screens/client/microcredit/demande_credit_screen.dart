@@ -37,9 +37,10 @@ class _DemandeCreditScreenState extends State<DemandeCreditScreen> {
   }
 
   Future<void> _checkEligibility() async {
-    final eligible = await _scoreService.isEligibleForCredit();
-    final plafond = await _scoreService.getPlafondCdf();
-    final missing = await _scoreService.getMissingReasonsForEligibility();
+    final msisdn = widget.user.msisdn;
+    final eligible = await _scoreService.isEligibleForCredit(msisdn);
+    final plafond = await _scoreService.getPlafondCdf(msisdn);
+    final missing = await _scoreService.getMissingReasonsForEligibility(msisdn);
     if (mounted) {
       setState(() {
         _isEligible = eligible;

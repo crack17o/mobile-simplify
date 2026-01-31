@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:mobile_simplify/models/user.dart';
 import 'package:mobile_simplify/models/tontine.dart';
 import 'package:mobile_simplify/theme/app_theme.dart';
+import 'package:mobile_simplify/core/savings_service.dart';
 
-/// Créer une tontine : nom, montant cotisation, fréquence, confirmation.
+/// Créer une tontine : nom, montant, fréquence. Génère un PIN à partager.
+/// Prérequis : compte épargne fonctionnel et fourni en argent.
 class TontineCreateScreen extends StatefulWidget {
   final AppUser user;
 
@@ -16,8 +18,11 @@ class TontineCreateScreen extends StatefulWidget {
 class _TontineCreateScreenState extends State<TontineCreateScreen> {
   final _nameController = TextEditingController();
   final _montantController = TextEditingController();
+  final _savings = SavingsService();
   TontineFrequence? _frequence;
   bool _loading = false;
+  String? _createdPin;
+  Tontine? _createdTontine;
 
   @override
   void dispose() {
@@ -26,7 +31,7 @@ class _TontineCreateScreenState extends State<TontineCreateScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final name = _nameController.text.trim();
     final montant = _montantController.text.trim();
     if (name.isEmpty || montant.isEmpty || _frequence == null) {
@@ -48,19 +53,35 @@ class _TontineCreateScreenState extends State<TontineCreateScreen> {
       );
       return;
     }
-    setState(() => _loading = true);
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (!mounted) return;
-      setState(() => _loading = false);
-      final freqLabel = (Tontine(id: '', name: '', cotisationAmount: 0, frequence: _frequence!, status: TontineStatus.active).frequenceLabel);
+    final msisdn = widget.user.msisdn;
+    final savingsEnabled = await _savings.isEnabled(msisdn);
+    final savingsBalance = await _savings.getBalanceCdf(msisdn);
+    if (!savingsEnabled || savingsBalance <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Tontine créée : $name — ${amount.toStringAsFixed(0)} CDF / $freqLabel'),
+        const SnackBar(
+          content: Text('Compte épargne requis. Active et alimente ton épargne d\'abord.'),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: AppTheme.success,
+          backgroundColor: AppTheme.destructive,
         ),
       );
-      Navigator.pop(context);
+      return;
+    }
+    setState(() => _loading = true);
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
+    final pin = 'TNT${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+    setState(() {
+      _loading = false;
+      _createdPin = pin;
+      _createdTontine = Tontine(
+        id: 'TNT${DateTime.now().millisecondsSinceEpoch}',
+        name: name,
+        cotisationAmount: amount,
+        frequence: _frequence!,
+        status: TontineStatus.active,
+        pin: pin,
+        totalMembers: 1,
+      );
     });
   }
 
@@ -89,6 +110,88 @@ class _TontineCreateScreenState extends State<TontineCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_createdPin != null && _createdTontine != null) {
+      final t = _createdTontine!;
+      return Scaffold(
+        backgroundColor: AppTheme.surfaceDark,
+        appBar: AppBar(
+          title: const Text('Tontine créée'),
+          backgroundColor: AppTheme.sidebarBackground,
+          foregroundColor: AppTheme.sidebarForeground,
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppTheme.cardDark,
+                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                border: Border.all(color: AppTheme.success.withOpacity(0.5)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.check_circle_rounded, color: AppTheme.success, size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Tontine « ${t.name} » créée',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: AppTheme.sidebarForeground,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text('PIN à partager pour rejoindre', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(AppTheme.radius),
+                    ),
+                    child: Text(
+                      _createdPin!,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontFamily: 'monospace',
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primary,
+                            letterSpacing: 2,
+                          ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Partage ce PIN aux personnes qui veulent adhérer. Elles doivent avoir au moins 20 % de la somme totale en épargne.',
+                    style: TextStyle(color: Colors.white54, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: AppTheme.primaryForeground,
+                ),
+                child: const Text('Terminer'),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppTheme.surfaceDark,
       appBar: AppBar(
@@ -99,6 +202,27 @@ class _TontineCreateScreenState extends State<TontineCreateScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.cardDark.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(AppTheme.radius),
+              border: Border.all(color: AppTheme.cardDarkElevated),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline_rounded, color: AppTheme.primary, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Compte épargne fonctionnel et alimenté requis. Le PIN généré sera partagé pour adhérer.',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
           TextField(
             controller: _nameController,
             style: const TextStyle(color: AppTheme.sidebarForeground, fontSize: 16),

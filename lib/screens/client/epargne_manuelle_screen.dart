@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mobile_simplify/models/user.dart';
 import 'package:mobile_simplify/theme/app_theme.dart';
 import 'package:mobile_simplify/core/savings_service.dart';
+import 'package:mobile_simplify/core/auth_service.dart';
+import 'package:mobile_simplify/core/score_service.dart';
 
 /// Épargne manuelle : montant + PIN → SUCCESS/FAILED.
 class EpargneManuelleScreen extends StatefulWidget {
@@ -17,6 +19,7 @@ class _EpargneManuelleScreenState extends State<EpargneManuelleScreen> {
   final _montantController = TextEditingController();
   final _pinController = TextEditingController();
   final _savings = SavingsService();
+  final _scoreService = ScoreService();
   bool _loading = false;
   bool? _success;
   String? _error;
@@ -44,16 +47,23 @@ class _EpargneManuelleScreenState extends State<EpargneManuelleScreen> {
     });
     await Future.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
-    final ok = _pinController.text.trim() == '0000'; // mock: PIN 0000 = success
+    final pin = _pinController.text.trim();
+    final ok = (widget.user.role == UserRole.client && pin == DemoCredentials.clientPin) ||
+        (widget.user.role == UserRole.agent && pin == DemoCredentials.agentPin);
     if (ok) {
-      await _savings.addToBalance(amount);
+      final msisdn = widget.user.msisdn;
+      await _savings.setEnabled(msisdn, true);
+      await _savings.addToBalance(msisdn, amount);
       await _savings.addHistoryEntry(
+        msisdn,
         '${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year} ${DateTime.now().hour}:${DateTime.now().minute}',
         amount,
         'SUCCESS',
       );
+      await _scoreService.incrementDeposit(msisdn);
     } else {
       await _savings.addHistoryEntry(
+        widget.user.msisdn,
         '${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year}',
         amount,
         'FAILED',

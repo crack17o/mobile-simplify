@@ -26,7 +26,7 @@ class _EpargneHistoriqueScreenState extends State<EpargneHistoriqueScreen> {
   }
 
   Future<void> _load() async {
-    final list = await _savings.getHistory();
+    final list = await _savings.getHistory(widget.user.msisdn);
     if (mounted) {
       setState(() {
         _items = list;

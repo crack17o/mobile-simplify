@@ -27,7 +27,7 @@ class _HistoriqueEpargneTabState extends State<HistoriqueEpargneTab> {
   }
 
   Future<void> _load() async {
-    final list = await _savings.getHistory();
+    final list = await _savings.getHistory(widget.user.msisdn);
     if (mounted) {
       setState(() {
         _items = list;

@@ -54,12 +54,12 @@ class _ClientShellState extends State<ClientShell> {
       backgroundColor: AppTheme.sidebarBackground,
       foregroundColor: AppTheme.sidebarForeground,
       elevation: 0,
-      leadingWidth: 80,
+      leadingWidth: 120,
       leading: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         child: Image.asset(
           'assets/logo-light.png',
-          height: 70,
+          height: 72,
           fit: BoxFit.contain,
           errorBuilder: (_, __, ___) => Icon(
             Icons.account_balance_wallet_rounded,

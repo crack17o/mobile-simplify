@@ -3,7 +3,7 @@ import 'package:mobile_simplify/models/user.dart';
 import 'package:mobile_simplify/theme/app_theme.dart';
 import 'package:mobile_simplify/core/agent_api_service.dart';
 import 'package:mobile_simplify/screens/agent/agent_deposit_screen.dart';
-import 'package:mobile_simplify/screens/agent/agent_withdraw_screen.dart';
+import 'package:mobile_simplify/screens/agent/agent_deposit_epargne_screen.dart';
 
 /// Consultation par téléphone : solde wallet, score, éligibilité crédit.
 /// GET /api/wallet/summary/?phone= | /api/score/?phone= | /api/loans/eligibility/?phone=
@@ -96,6 +96,11 @@ class _AgentClientDetailScreenState extends State<AgentClientDetailScreen> {
                           Text('${_fmt((_wallet?['balance_cdf'] ?? 0).toDouble())} CDF', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 22)),
                           if (_wallet?['balance_usd'] != null)
                             Text('\$${_wallet!['balance_usd']} USD', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                          if (_wallet?['savings_cdf'] != null) ...[
+                            const SizedBox(height: 12),
+                            Text('Épargne', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                            Text('${_fmt((_wallet!['savings_cdf'] as num).toDouble())} CDF', style: TextStyle(color: AppTheme.success, fontWeight: FontWeight.w600, fontSize: 18)),
+                          ],
                         ],
                       ),
                     ),
@@ -128,9 +133,22 @@ class _AgentClientDetailScreenState extends State<AgentClientDetailScreen> {
                           context,
                           MaterialPageRoute(builder: (_) => AgentDepositScreen(user: widget.user, phone: widget.phone)),
                         ).then((_) => _load()),
-                        icon: const Icon(Icons.add_circle_rounded, size: 22),
-                        label: const Text('Dépôt (client vous donne du cash)'),
+                        icon: const Icon(Icons.account_balance_wallet_rounded, size: 22),
+                        label: const Text('Dépôt wallet (client vous donne du cash)'),
                         style: ElevatedButton.styleFrom(backgroundColor: AppTheme.success, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => AgentDepositEpargneScreen(user: widget.user, phone: widget.phone)),
+                        ).then((_) => _load()),
+                        icon: const Icon(Icons.savings_rounded, size: 22),
+                        label: const Text('Dépôt épargne'),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: AppTheme.primaryForeground, padding: const EdgeInsets.symmetric(vertical: 14)),
                       ),
                     ),
                   ],

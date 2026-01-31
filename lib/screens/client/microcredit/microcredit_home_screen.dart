@@ -63,7 +63,7 @@ class MicrocreditHomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Plafond éligible : $plafondEligible CDF',
+                            'Plafond éligible : $plafondEligible CDF • Taux : +10 % intérêt',
                             style: TextStyle(color: Colors.white70, fontSize: 14),
                           ),
                         ],

@@ -36,10 +36,11 @@ class _EpargneAutoScreenState extends State<EpargneAutoScreen> {
   }
 
   Future<void> _load() async {
-    final active = await _savings.getAutoActive();
-    final amount = await _savings.getAutoAmount();
-    final freq = await _savings.getAutoFreq();
-    final next = await _savings.getAutoNext();
+    final msisdn = widget.user.msisdn;
+    final active = await _savings.getAutoActive(msisdn);
+    final amount = await _savings.getAutoAmount(msisdn);
+    final freq = await _savings.getAutoFreq(msisdn);
+    final next = await _savings.getAutoNext(msisdn);
     if (mounted) {
       setState(() {
         _active = active;
@@ -60,7 +61,7 @@ class _EpargneAutoScreenState extends State<EpargneAutoScreen> {
       return;
     }
     final next = '${DateTime.now().day + ( _selectedFreq == 'Quotidien' ? 1 : _selectedFreq == 'Hebdo' ? 7 : 30) }/${DateTime.now().month}/${DateTime.now().year}';
-    await _savings.setAutoPlan(amount: amount, freq: _selectedFreq, next: next, active: true);
+    await _savings.setAutoPlan(widget.user.msisdn, amount: amount, freq: _selectedFreq, next: next, active: true);
     if (mounted) {
       setState(() {
         _active = true;
@@ -73,7 +74,7 @@ class _EpargneAutoScreenState extends State<EpargneAutoScreen> {
   }
 
   Future<void> _disable() async {
-    await _savings.setAutoPlan(active: false);
+    await _savings.setAutoPlan(widget.user.msisdn, active: false);
     if (mounted) {
       setState(() => _active = false);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Plan auto-épargne désactivé'), behavior: SnackBarBehavior.floating));

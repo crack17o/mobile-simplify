@@ -22,6 +22,9 @@ class TontineListScreen extends StatelessWidget {
       nextRoundDate: '08/02/2025',
       nextBeneficiary: 'Marie K.',
       memberNames: ['Vous', 'Marie K.', 'Jean B.', 'Anne M.'],
+      totalMembers: 4,
+      currentRound: 2,
+      myPositionInOrder: 3,
     ),
     const Tontine(
       id: 'TNT002',
@@ -32,6 +35,9 @@ class TontineListScreen extends StatelessWidget {
       nextRoundDate: '28/02/2025',
       nextBeneficiary: null,
       memberNames: ['Vous', 'Paul L.', 'Sophie D.'],
+      totalMembers: 3,
+      currentRound: 1,
+      myPositionInOrder: 2,
     ),
   ];
 
@@ -53,7 +59,7 @@ class TontineListScreen extends StatelessWidget {
                 child: _CtaCard(
                   icon: Icons.login_rounded,
                   label: 'Rejoindre',
-                  subtitle: 'Code d\'invitation',
+                  subtitle: 'PIN de la tontine',
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => TontineJoinScreen(user: user)),
@@ -208,7 +214,7 @@ class _TontineTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${t.cotisationAmount.toStringAsFixed(0)} CDF • ${t.frequenceLabel}',
+                      '${t.cotisationAmount.toStringAsFixed(0)} CDF • ${t.frequenceLabel}${t.totalMembers > 0 ? ' • ${t.toursRestantsAvantMise} tours restants' : ''}',
                       style: TextStyle(color: Colors.white54, fontSize: 13),
                     ),
                   ],

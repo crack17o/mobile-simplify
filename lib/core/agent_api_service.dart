@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:mobile_simplify/core/savings_service.dart';
+import 'package:mobile_simplify/core/score_service.dart';
 
 /// Service API Agent (Simplify).
 /// Base: https://simplify-back.onrender.com ou localhost:8000
@@ -140,11 +142,20 @@ class AgentApiService {
     return null;
   }
 
+  String _normPhone(String v) {
+    var s = v.replaceAll(RegExp(r'\D'), '');
+    if (s.length == 9 && !s.startsWith('243')) s = '243$s';
+    return s;
+  }
+
   /// GET /api/wallet/summary/?phone=<phone>
   Future<Map<String, dynamic>?> getWalletSummary(String phone) async {
     if (useMock) {
-      await Future.delayed(const Duration(milliseconds: 300));
-      return {'balance_cdf': 1250000, 'balance_usd': 450, 'currency': 'CDF'};
+      await Future.delayed(const Duration(milliseconds: 200));
+      final savings = SavingsService();
+      final msisdn = _normPhone(phone);
+      final savingsCdf = msisdn.isNotEmpty ? await savings.getBalanceCdf(msisdn) : 0.0;
+      return {'balance_cdf': 1250000, 'balance_usd': 450, 'currency': 'CDF', 'savings_cdf': savingsCdf};
     }
     try {
       final r = await http.get(Uri.parse('$_baseUrl/api/wallet/summary/').replace(queryParameters: {'phone': phone}), headers: _headers);
@@ -169,8 +180,13 @@ class AgentApiService {
   /// GET /api/loans/eligibility/?phone=<phone>
   Future<Map<String, dynamic>?> getEligibility(String phone) async {
     if (useMock) {
-      await Future.delayed(const Duration(milliseconds: 300));
-      return {'eligible': true, 'score': 65, 'max_loan': 300000, 'guarantee_percent': 10};
+      await Future.delayed(const Duration(milliseconds: 200));
+      final scoreSvc = ScoreService();
+      final msisdn = _normPhone(phone);
+      final eligible = msisdn.isNotEmpty ? await scoreSvc.isEligibleForCredit(msisdn) : true;
+      final score = msisdn.isNotEmpty ? await scoreSvc.getScore(msisdn) : 65;
+      final maxLoan = msisdn.isNotEmpty ? await scoreSvc.getPlafondCdf(msisdn) : 300000;
+      return {'eligible': eligible, 'score': score, 'max_loan': maxLoan, 'guarantee_percent': 10};
     }
     try {
       final r = await http.get(Uri.parse('$_baseUrl/api/loans/eligibility/').replace(queryParameters: {'phone': phone}), headers: _headers);

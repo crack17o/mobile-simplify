@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_simplify/models/user.dart';
 import 'package:mobile_simplify/theme/app_theme.dart';
+import 'package:mobile_simplify/core/savings_service.dart';
 
-/// Rejoindre une tontine : saisie code d'invitation, confirmation.
+/// Rejoindre une tontine : saisie PIN, vérification 20 % épargne, confirmation.
 class TontineJoinScreen extends StatefulWidget {
   final AppUser user;
 
@@ -13,39 +14,67 @@ class TontineJoinScreen extends StatefulWidget {
 }
 
 class _TontineJoinScreenState extends State<TontineJoinScreen> {
-  final _codeController = TextEditingController();
+  final _pinController = TextEditingController();
+  final _savings = SavingsService();
   bool _loading = false;
 
   @override
   void dispose() {
-    _codeController.dispose();
+    _pinController.dispose();
     super.dispose();
   }
 
-  void _submit() {
-    final code = _codeController.text.trim();
-    if (code.isEmpty) {
+  Future<void> _submit() async {
+    final pin = _pinController.text.trim();
+    if (pin.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Saisissez le code d\'invitation'),
+          content: Text('Saisissez le PIN de la tontine'),
           behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
-    setState(() => _loading = true);
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (!mounted) return;
-      setState(() => _loading = false);
+    final msisdn = widget.user.msisdn;
+    final savingsEnabled = await _savings.isEnabled(msisdn);
+    final savingsBalance = await _savings.getBalanceCdf(msisdn);
+    if (!savingsEnabled || savingsBalance <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Demande envoyée. Vous serez ajouté après validation.'),
+          content: Text('Compte épargne requis. Active et alimente ton épargne d\'abord.'),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: AppTheme.success,
+          backgroundColor: AppTheme.destructive,
         ),
       );
-      Navigator.pop(context);
-    });
+      return;
+    }
+    setState(() => _loading = true);
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
+    final cotisation = 5000.0;
+    final members = 4;
+    final totalTontine = cotisation * (members - 1);
+    final minRequired = totalTontine * 0.2;
+    if (savingsBalance < minRequired) {
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Épargne insuffisante. Minimum 20 % requis : ${minRequired.toStringAsFixed(0)} CDF. Tu as ${savingsBalance.toStringAsFixed(0)} CDF.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppTheme.destructive,
+        ),
+      );
+      return;
+    }
+    setState(() => _loading = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Adhésion réussie. Bienvenue dans la tontine.'),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppTheme.success,
+      ),
+    );
+    Navigator.pop(context);
   }
 
   InputDecoration _inputDecoration(String label, [String? hint]) {
@@ -90,24 +119,29 @@ class _TontineJoinScreenState extends State<TontineJoinScreen> {
               borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
               border: Border.all(color: AppTheme.cardDarkElevated),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline_rounded, color: AppTheme.primary, size: 24),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Entrez le code d\'invitation fourni par l\'organisateur de la tontine.',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
+                Row(
+                  children: [
+                    Icon(Icons.info_outline_rounded, color: AppTheme.primary, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Entre le PIN fourni par l\'organisateur. Tu dois avoir au moins 20 % de la somme totale en épargne pour rejoindre.',
+                        style: TextStyle(color: Colors.white70, fontSize: 14),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
           const SizedBox(height: 24),
           TextField(
-            controller: _codeController,
+            controller: _pinController,
             style: const TextStyle(color: AppTheme.sidebarForeground, fontSize: 16),
-            decoration: _inputDecoration('Code d\'invitation', 'Ex. TNT-ABC123'),
+            decoration: _inputDecoration('PIN de la tontine', 'Ex. TNT1234567'),
             onSubmitted: (_) => _submit(),
           ),
           const SizedBox(height: 28),

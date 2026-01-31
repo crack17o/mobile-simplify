@@ -4,6 +4,7 @@ import 'package:mobile_simplify/models/user.dart';
 import 'package:mobile_simplify/theme/app_theme.dart';
 import 'package:mobile_simplify/screens/agent/agent_client_detail_screen.dart';
 import 'package:mobile_simplify/screens/agent/agent_deposit_screen.dart';
+import 'package:mobile_simplify/screens/agent/agent_deposit_epargne_screen.dart';
 import 'package:mobile_simplify/screens/agent/redeem_cashout_screen.dart';
 
 /// Caisse : Dépôt (client → agent), Encaisser retrait (client donne code).
@@ -65,6 +66,15 @@ class _AgentCaisseScreenState extends State<AgentCaisseScreen> {
     );
   }
 
+  void _depositEpargne() {
+    if (!_validatePhone()) return;
+    final phone = _normalizePhone(_phoneController.text.trim());
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => AgentDepositEpargneScreen(user: widget.user, phone: phone)),
+    );
+  }
+
   void _encaisserRetrait() {
     Navigator.push(
       context,
@@ -97,7 +107,7 @@ class _AgentCaisseScreenState extends State<AgentCaisseScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Téléphone : consultation ou dépôt. Retrait : le client génère un code, vous le saisissez pour encaisser.',
+            'Téléphone : consultation, dépôt wallet ou dépôt épargne. Retrait : le client génère un code, vous le saisissez.',
             style: TextStyle(color: Colors.white54, fontSize: 14),
           ),
           const SizedBox(height: 20),

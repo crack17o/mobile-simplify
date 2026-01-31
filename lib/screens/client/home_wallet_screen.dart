@@ -32,8 +32,9 @@ class _HomeWalletScreenState extends State<HomeWalletScreen> {
   }
 
   Future<void> _loadSavings() async {
-    final enabled = await _savings.isEnabled();
-    final balance = await _savings.getBalanceCdf();
+    final msisdn = widget.user.msisdn;
+    final enabled = await _savings.isEnabled(msisdn);
+    final balance = await _savings.getBalanceCdf(msisdn);
     if (mounted) {
       setState(() {
         _savingsEnabled = enabled;

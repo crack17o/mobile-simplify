@@ -65,6 +65,66 @@ class TontineDetailScreen extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppTheme.cardDark,
+              borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+              border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ma progression',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Tours restants avant la mise', style: TextStyle(color: Colors.white54, fontSize: 13)),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${t.toursRestantsAvantMise}',
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: AppTheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(width: 1, height: 40, color: AppTheme.cardDarkElevated),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Somme déjà mise', style: TextStyle(color: Colors.white54, fontSize: 13)),
+                          const SizedBox(height: 4),
+                          Text(
+                            _formatCdf(t.sommeDejaMise),
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: AppTheme.sidebarForeground,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 20),
           Text(
             'Prochain tour',

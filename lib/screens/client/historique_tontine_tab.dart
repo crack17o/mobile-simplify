@@ -78,13 +78,18 @@ class _HistoriqueTontineTabState extends State<HistoriqueTontineTab> {
   }
 
   void _showDetail(BuildContext context, Map<String, dynamic> c) {
+    final amount = (c['amount'] as num).toDouble();
     final tontine = Tontine(
       id: c['id'] as String,
       name: c['name'] as String,
-      cotisationAmount: (c['amount'] as num).toDouble(),
+      cotisationAmount: amount,
       frequence: TontineFrequence.semaine,
       status: TontineStatus.active,
       nextRoundDate: '04/02/2025',
+      memberNames: ['Vous', 'Marie K.', 'Jean B.'],
+      totalMembers: 3,
+      currentRound: 2,
+      myPositionInOrder: 3,
     );
     Navigator.push(
       context,

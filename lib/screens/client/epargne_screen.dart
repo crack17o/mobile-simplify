@@ -32,11 +32,12 @@ class _EpargneScreenState extends State<EpargneScreen> {
   }
 
   Future<void> _load() async {
-    final balance = await _savings.getBalanceCdf();
-    final autoActive = await _savings.getAutoActive();
-    final autoAmount = await _savings.getAutoAmount();
-    final autoFreq = await _savings.getAutoFreq();
-    final autoNext = await _savings.getAutoNext();
+    final msisdn = widget.user.msisdn;
+    final balance = await _savings.getBalanceCdf(msisdn);
+    final autoActive = await _savings.getAutoActive(msisdn);
+    final autoAmount = await _savings.getAutoAmount(msisdn);
+    final autoFreq = await _savings.getAutoFreq(msisdn);
+    final autoNext = await _savings.getAutoNext(msisdn);
     if (mounted) {
       setState(() {
         _balanceCdf = balance;
@@ -89,7 +90,20 @@ class _EpargneScreenState extends State<EpargneScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Total épargné', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Total épargné', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.success.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text('+5 % intérêt', style: TextStyle(color: AppTheme.success, fontSize: 12, fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 Text(_fmtCdf(_balanceCdf), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.primary, fontWeight: FontWeight.bold)),
               ],

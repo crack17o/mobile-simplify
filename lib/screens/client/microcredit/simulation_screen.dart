@@ -16,7 +16,7 @@ class SimulationScreen extends StatefulWidget {
 class _SimulationScreenState extends State<SimulationScreen> {
   final _montantController = TextEditingController(text: '100000');
   int _dureeMois = 6;
-  static const _tauxAnnuel = 18.0; // % mock
+  static const _tauxAnnuel = 10.0; // % intérêt annuel
 
   @override
   void dispose() {
